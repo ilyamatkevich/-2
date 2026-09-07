@@ -16,13 +16,19 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Install dependencies
         run: npm install
 
       - name: Install TypeScript
         run: npm install -D typescript
 
-      # 👇 Новый шаг: создаём папку dist и копируем туда www
+      # 👇 Создаём папку dist, чтобы Capacitor её увидел
       - name: Prepare web assets
         run: |
           if [ -d "www" ]; then
