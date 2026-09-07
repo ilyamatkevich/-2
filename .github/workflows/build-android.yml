@@ -1,0 +1,66 @@
+name: Build Android APK
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install TypeScript
+        run: npm install -D typescript
+
+      # 👇 Создаём папку dist и копируем все веб-файлы из корня и src
+      - name: Prepare web assets
+        run: |
+          mkdir -p dist
+          # Копируем index.html
+          cp index.html dist/
+          # Копируем все папки, которые могут содержать ресурсы (src, css, js, images и т.д.)
+          # Игнорируем системные папки и файлы, чтобы не засорять
+          for item in *; do
+            if [ "$item" != "dist" ] && [ "$item" != ".github" ] && [ "$item" != "package.json" ] && [ "$item" != "package-lock.json" ] && [ "$item" != "node_modules" ] && [ "$item" != "capacitor.config.json" ]; then
+              cp -R "$item" dist/ 2>/dev/null || true
+            fi
+          done
+          # Если есть папка src, копируем её содержимое (на случай, если index.html ссылается на src/...)
+          if [ -d "src" ]; then
+            cp -R src/* dist/ 2>/dev/null || true
+          fi
+          # Выводим содержимое dist для проверки
+          echo "Содержимое dist:"
+          ls -la dist
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Sync web assets
+        run: npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan12-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
