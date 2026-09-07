@@ -19,9 +19,21 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 👇 Добавь эту строку
       - name: Install TypeScript
         run: npm install -D typescript
+
+      # 👇 Новый шаг: создаём папку dist и копируем туда www
+      - name: Prepare web assets
+        run: |
+          if [ -d "www" ]; then
+            mkdir -p dist
+            cp -R www/* dist/
+            echo "dist содержимое:"
+            ls -la dist
+          else
+            echo "Папка www не найдена! Проверьте структуру репозитория."
+            exit 1
+          fi
 
       - name: Add Android platform
         run: npx cap add android
